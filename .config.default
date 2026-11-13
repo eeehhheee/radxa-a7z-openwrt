@@ -1,0 +1,20 @@
+# Radxa A7Z OpenWrt 构建配置
+
+这个文件定义了 OpenWrt 构建的默认配置参数。
+
+## 配置说明
+
+- **目标系统**: Allwinner AIoT
+- **目标设备**: Radxa Cubie-A7Z
+- **内核版本**: 6.6
+- **构建类型**: 发布镜像
+
+## 使用方法
+
+```bash
+cp .config.default openwrt-sunxi-aiot/.config
+cd openwrt-sunxi-aiot
+make menuconfig  # 可选，进一步自定义
+make -j$(nproc) V=s
+```
+

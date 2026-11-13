@@ -1,0 +1,23 @@
+# OpenWrt build artifacts
+bin/
+build_dir/
+staging_dir/
+tmp/
+.config
+.config.old
+feeds/
+
+# BSP build artifacts
+*.o
+*.a
+*.so
+*.out
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Development
+.vscode/
+.idea/
+*.code-workspace
