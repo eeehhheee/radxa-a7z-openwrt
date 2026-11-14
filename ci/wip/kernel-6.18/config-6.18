@@ -1,0 +1,42 @@
+CONFIG_TARGET_allwinner=y
+CONFIG_TARGET_allwinner_aiot=y
+CONFIG_TARGET_BOARD="allwinner"
+CONFIG_TARGET_SUBTARGET="aiot"
+CONFIG_HAS_SUBTARGETS=y
+CONFIG_HAS_DEVICES=y
+
+# ARM64 optimization for Cortex-A53 (A733 SoC)
+CONFIG_DEFAULT_TARGET_OPTIMIZATION="-Os -pipe -mcpu=cortex-a53"
+CONFIG_CPU_TYPE="cortex-a53"
+
+# Kernel compression
+CONFIG_KERNEL_GZIP=y
+
+# PCIe/NVME Support
+CONFIG_KMOD_PCIE_ALLWINNER=y
+CONFIG_KMOD_PCIE=y
+CONFIG_KMOD_NVME=y
+CONFIG_KMOD_BLK_DEV_NVME=y
+
+# Network drivers
+CONFIG_PACKAGE_kmod-stmmac=y
+CONFIG_PACKAGE_kmod-motorcomm=y
+
+# Wi-Fi support (AIC8800D80)
+CONFIG_PACKAGE_kmod-mac80211=y
+CONFIG_PACKAGE_wpad-openssl=y
+
+# LuCI web interface
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-app-firewall=y
+
+# SSH access
+CONFIG_PACKAGE_openssh-sftp-server=y
+CONFIG_PACKAGE_openssh-client=y
+
+# Signature disabled for testing
+CONFIG_SIGNATURE_CHECK=n
+CONFIG_SIGNED_PACKAGES=n
+
+# A733-specific VPU (Cedar)
+CONFIG_KMOD_CEDAR_VPU=y

@@ -1,0 +1,13 @@
+diff --git a/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60i-a733-cubie-a7z.dts b/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60i-a733-cubie-a7z.dts
+index 01c02c5c..ad6f44f9 100755
+--- a/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60i-a733-cubie-a7z.dts
++++ b/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60i-a733-cubie-a7z.dts
+@@ -1044,6 +1044,8 @@
+ 	wake-gpios = <&pio PD 21 GPIO_ACTIVE_HIGH>;
+ 	pcie1v8-supply = <&reg_bldo1>;
+ 	pcie3v3-supply = <&reg_dcdc1>;
++	/* Disable PCIe training in U-Boot to prevent hang when PCIe2 is misidentified as PCIe3 */
++	skip-uboot-pcie-training = <1>;
+ 	status = "okay";
+ };
+ 

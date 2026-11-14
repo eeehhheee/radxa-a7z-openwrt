@@ -1,35 +1,52 @@
 name: Build OpenWrt 6.18 for Radxa A7Z
 
+# Manual only: the 6.18 kernel port is not complete in openwrt-sunxi-aiot.
+# The branch still ships include/kernel-6.6 only and has no
+# target/linux/generic/{pending,backport,hack}-6.18. See ci/wip/README.md.
 on:
-  push:
-    branches:
-      - main
-      - develop
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
-env:
-  UPLOAD_FIRMWARE: true
-  KERNEL_VERSION: "6.18"
+permissions:
+  contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Checkout OpenWrt submodule
+        run: git submodule update --init openwrt-sunxi-aiot
+
+      - name: Check kernel 6.18 support
+        run: |
+          if [ ! -f openwrt-sunxi-aiot/include/kernel-6.18 ]; then
+            echo "::error::Kernel 6.18 support is missing: openwrt-sunxi-aiot/include/kernel-6.18 and target/linux/generic/*-6.18 do not exist. Port them from an OpenWrt tree that ships 6.18 before running this workflow. See ci/wip/README.md."
+            exit 1
+          fi
+          if ! ls openwrt-sunxi-aiot/target/linux/generic/pending-6.18 >/dev/null 2>&1; then
+            echo "::error::Generic 6.18 kernel patches are missing (target/linux/generic/pending-6.18)."
+            exit 1
+          fi
+
+      - name: Apply 6.18 overlay
+        run: |
+          cp -a ci/overlay-6.18/. openwrt-sunxi-aiot/
+          git -C openwrt-sunxi-aiot apply "$GITHUB_WORKSPACE/ci/patches/dts-skip-uboot-pcie-training.patch"
+          sed -i 's/^KERNEL_PATCHVER:=6\.6$/KERNEL_PATCHVER:=6.18/' openwrt-sunxi-aiot/target/linux/allwinner/Makefile
+          grep -q '^KERNEL_PATCHVER:=6\.18$' openwrt-sunxi-aiot/target/linux/allwinner/Makefile
 
       - name: Initialize environment
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential clang flex g++ gawk gcc-12 gettext git libelf-dev libncurses-dev libssl-dev python3 python3-distutils python3-dev rsync unzip zlib1g-dev file wget
+          sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-12 gettext git libelf-dev libncurses-dev libssl-dev python3 python3-distutils python3-dev rsync unzip zlib1g-dev file wget
 
       - name: Free disk space
         run: |
@@ -45,10 +62,10 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Generate build configuration for 6.18
+      - name: Generate build configuration
         working-directory: ./openwrt-sunxi-aiot
         run: |
-          cat > .config << EOF
+          cat > .config <<'EOF'
           CONFIG_TARGET_allwinner=y
           CONFIG_TARGET_allwinner_aiot=y
           CONFIG_TARGET_allwinner_aiot_radxa_cubie-a7z=y
@@ -59,15 +76,12 @@ jobs:
           CONFIG_HAS_DEVICES=y
           CONFIG_DEFAULT_TARGET_OPTIMIZATION="-Os -pipe -mcpu=cortex-a53"
           CONFIG_CPU_TYPE="cortex-a53"
-          CONFIG_KERNEL_VERSION_OVERRIDE="6.18"
           CONFIG_PACKAGE_kmod-mac80211=y
           CONFIG_PACKAGE_wpad-openssl=y
           CONFIG_PACKAGE_luci=y
           CONFIG_PACKAGE_luci-app-firewall=y
           CONFIG_PACKAGE_openssh-sftp-server=y
           CONFIG_PACKAGE_openssh-client=y
-          CONFIG_KMOD_PCIE_ALLWINNER=y
-          CONFIG_KMOD_NVME=y
           CONFIG_SIGNATURE_CHECK=n
           CONFIG_SIGNED_PACKAGES=n
           EOF
@@ -75,13 +89,11 @@ jobs:
 
       - name: Build bootloader (U-Boot)
         working-directory: ./openwrt-sunxi-aiot
-        run: |
-          make package/boot/uboot-allwinner/compile V=s || true
+        run: make package/boot/uboot-allwinner/compile V=s
 
       - name: Build firmware with Linux 6.18
         working-directory: ./openwrt-sunxi-aiot
-        run: |
-          make -j$(nproc) V=s 2>&1 | tee build.log
+        run: make -j"$(nproc)" V=s 2>&1 | tee build.log
 
       - name: Check build artifacts
         working-directory: ./openwrt-sunxi-aiot
@@ -91,16 +103,18 @@ jobs:
 
       - name: Upload firmware artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: openwrt-firmware-a7z-6.18
           path: openwrt-sunxi-aiot/bin/targets/allwinner/aiot/
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload build log
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-log-6.18
           path: openwrt-sunxi-aiot/build.log
           retention-days: 7
+          if-no-files-found: warn
