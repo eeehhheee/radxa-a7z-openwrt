@@ -81,10 +81,6 @@ jobs:
           EOF
           make defconfig
 
-      - name: Build bootloader (U-Boot)
-        working-directory: ./openwrt-sunxi-aiot
-        run: make package/boot/uboot-allwinner/compile V=s
-
       - name: Build firmware
         working-directory: ./openwrt-sunxi-aiot
         run: make -j"$(nproc)" V=s 2>&1 | tee build.log
