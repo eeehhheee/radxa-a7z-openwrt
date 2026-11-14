@@ -1,6 +1,6 @@
 [submodule "openwrt-sunxi-aiot"]
 	path = openwrt-sunxi-aiot
-	url = https://github.com/chainsx/openwrt-sunxi-aiot
+	url = https://github.com/eeehhheee/openwrt-sunxi-aiot
 [submodule "allwinner-bsp"]
 	path = allwinner-bsp
 	url = https://github.com/radxa/allwinner-bsp

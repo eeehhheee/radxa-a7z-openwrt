@@ -31,10 +31,6 @@ jobs:
       - name: Checkout OpenWrt submodule
         run: git submodule update --init openwrt-sunxi-aiot
 
-      - name: Apply project patches
-        run: |
-          git -C openwrt-sunxi-aiot apply "$GITHUB_WORKSPACE/ci/patches/dts-skip-uboot-pcie-training.patch"
-
       - name: Initialize environment
         env:
           DEBIAN_FRONTEND: noninteractive
