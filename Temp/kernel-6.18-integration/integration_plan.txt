@@ -1,0 +1,16 @@
+# Linux 6.18 + Radxa A7Z 集成方案
+
+## 基础：OpenWrt 24.10 (openwrt-sunxi-aiot)
+## 目标：升级内核 6.6 → 6.18，集成 A733 补丁 + PCIe 训练跳过补丁
+
+## 步骤
+1. 创建 patches-6.18 目录结构
+2. 复制 A733 主补丁 + 关键驱动补丁
+3. 集成 PCIe 补丁（设备树 + U-Boot）
+4. 创建 config-6.18 内核配置
+5. 更新构建脚本和 GitHub Actions
+
+## 关键文件
+- /home/kaiter/radxa_a7z_openwrt/openwrt-sunxi-aiot/target/linux/allwinner/patches-6.6/  (参考)
+- /home/kaiter/radxa_a7z_openwrt/Temp/a733-patches/  (A733 补丁源)
+- /home/kaiter/radxa_a7z_openwrt/openwrt-sunxi-aiot/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60i-a733-cubie-a7z.dts (目标设备树)
