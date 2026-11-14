@@ -68,10 +68,9 @@ jobs:
           cat > .config <<'EOF'
           CONFIG_TARGET_allwinner=y
           CONFIG_TARGET_allwinner_aiot=y
-          CONFIG_TARGET_allwinner_aiot_radxa_cubie-a7z=y
+          CONFIG_TARGET_allwinner_aiot_DEVICE_radxa_cubie-a7z=y
           CONFIG_TARGET_BOARD="allwinner"
           CONFIG_TARGET_SUBTARGET="aiot"
-          CONFIG_TARGET_PROFILE="radxa_cubie-a7z"
           CONFIG_HAS_SUBTARGETS=y
           CONFIG_HAS_DEVICES=y
           CONFIG_DEFAULT_TARGET_OPTIMIZATION="-Os -pipe -mcpu=cortex-a53"
