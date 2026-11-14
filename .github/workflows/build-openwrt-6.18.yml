@@ -137,7 +137,7 @@ jobs:
         working-directory: ./openwrt-sunxi-aiot
         run: |
           set -o pipefail
-          if ! make -j"$(nproc)" > build.log 2>&1; then
+          if ! make -j"$(nproc)" V=s > build.log 2>&1; then
             echo "::error::OpenWrt build failed; last 300 log lines:"
             tail -300 build.log
             exit 1
