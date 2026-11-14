@@ -1,0 +1,9 @@
+[submodule "openwrt-sunxi-aiot"]
+	path = openwrt-sunxi-aiot
+	url = https://github.com/chainsx/openwrt-sunxi-aiot
+[submodule "allwinner-bsp"]
+	path = allwinner-bsp
+	url = https://github.com/radxa/allwinner-bsp
+[submodule "Temp/openwrt-25.12"]
+	path = Temp/openwrt-25.12
+	url = https://git.openwrt.org/openwrt/openwrt.git
