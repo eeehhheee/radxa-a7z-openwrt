@@ -85,6 +85,7 @@ jobs:
           CONFIG_SIGNED_PACKAGES=n
           EOF
           make defconfig
+          grep -q '^CONFIG_TARGET_allwinner_aiot_DEVICE_radxa_cubie-a7z=y$' .config
 
       - name: Build firmware with Linux 6.18
         working-directory: ./openwrt-sunxi-aiot
