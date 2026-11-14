@@ -83,6 +83,7 @@ jobs:
           CONFIG_HAS_DEVICES=y
           CONFIG_DEFAULT_TARGET_OPTIMIZATION="-Os -pipe -mcpu=cortex-a53"
           CONFIG_CPU_TYPE="cortex-a53"
+          CONFIG_KERNEL_PCI=y
 
           CONFIG_PACKAGE_luci=y
           CONFIG_PACKAGE_luci-app-firewall=y
