@@ -1,20 +1,60 @@
-# Radxa A7Z OpenWrt 构建配置
+CONFIG_TARGET_allwinner=y
+CONFIG_TARGET_allwinner_aiot=y
+CONFIG_TARGET_allwinner_aiot_DEVICE_radxa_cubie-a7z=y
+CONFIG_TARGET_BOARD="allwinner"
+CONFIG_TARGET_SUBTARGET="aiot"
+CONFIG_HAS_SUBTARGETS=y
+CONFIG_HAS_DEVICES=y
+CONFIG_DEFAULT_TARGET_OPTIMIZATION="-Os -pipe -mcpu=cortex-a53"
+CONFIG_CPU_TYPE="cortex-a53"
+CONFIG_KERNEL_PCI=y
 
-这个文件定义了 OpenWrt 构建的默认配置参数。
+# Web administration
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-app-firewall=y
+CONFIG_PACKAGE_luci-app-package-manager=y
+CONFIG_PACKAGE_luci-app-commands=y
+CONFIG_PACKAGE_luci-app-ttyd=y
+CONFIG_PACKAGE_luci-proto-ipv6=y
 
-## 配置说明
+# Remote access and network diagnostics
+CONFIG_PACKAGE_openssh-server=y
+CONFIG_PACKAGE_openssh-sftp-server=y
+CONFIG_PACKAGE_openssh-client=y
+CONFIG_PACKAGE_curl=y
+CONFIG_PACKAGE_wget-ssl=y
+CONFIG_PACKAGE_ca-bundle=y
+CONFIG_PACKAGE_tcpdump=y
+CONFIG_PACKAGE_ethtool=y
+CONFIG_PACKAGE_ip-full=y
+CONFIG_PACKAGE_iw=y
 
-- **目标系统**: Allwinner AIoT
-- **目标设备**: Radxa Cubie-A7Z
-- **内核版本**: 6.6
-- **构建类型**: 发布镜像
+# USB, PCIe/NVMe and storage
+CONFIG_PACKAGE_kmod-usb-storage=y
+CONFIG_PACKAGE_kmod-fs-ext4=y
+CONFIG_PACKAGE_kmod-fs-exfat=y
+CONFIG_PACKAGE_kmod-fs-ntfs3=y
+CONFIG_PACKAGE_block-mount=y
+CONFIG_PACKAGE_e2fsprogs=y
+CONFIG_PACKAGE_dosfstools=y
+CONFIG_PACKAGE_f2fs-tools=y
+CONFIG_PACKAGE_kmod-nvme=y
+CONFIG_PACKAGE_nvme-cli=y
+CONFIG_PACKAGE_pciutils=y
+CONFIG_PACKAGE_usbutils=y
+CONFIG_PACKAGE_kmod-usb-net-rtl8152=y
+CONFIG_PACKAGE_kmod-usb-net-cdc-ether=y
 
-## 使用方法
+# Wireless and basic utilities
+CONFIG_PACKAGE_wpad-openssl=y
+CONFIG_PACKAGE_kmod-mac80211=y
+CONFIG_PACKAGE_tar=y
+CONFIG_PACKAGE_unzip=y
+CONFIG_PACKAGE_gzip=y
+CONFIG_PACKAGE_htop=y
+CONFIG_PACKAGE_nano=y
+CONFIG_PACKAGE_bash=y
 
-```bash
-cp .config.default openwrt-sunxi-aiot/.config
-cd openwrt-sunxi-aiot
-make menuconfig  # 可选，进一步自定义
-make -j$(nproc) V=s
-```
+CONFIG_SIGNATURE_CHECK=n
+CONFIG_SIGNED_PACKAGES=n
 

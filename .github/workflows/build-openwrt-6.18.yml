@@ -46,8 +46,7 @@ jobs:
 
       - name: Select kernel 6.18
         run: |
-          sed -i 's/^KERNEL_PATCHVER:=6\.6$/KERNEL_PATCHVER:=6.18/' openwrt-sunxi-aiot/target/linux/allwinner/Makefile
-          grep -q '^KERNEL_PATCHVER:=6\.18$' openwrt-sunxi-aiot/target/linux/allwinner/Makefile
+          grep -q '^KERNEL_PATCHVER:=6\.6$' openwrt-sunxi-aiot/target/linux/allwinner/Makefile
 
       - name: Initialize environment
         env:
@@ -117,6 +116,10 @@ jobs:
           CONFIG_PACKAGE_curl=y
           CONFIG_PACKAGE_wget-ssl=y
           CONFIG_PACKAGE_ca-bundle=y
+          CONFIG_PACKAGE_tcpdump=y
+          CONFIG_PACKAGE_ethtool=y
+          CONFIG_PACKAGE_ip-full=y
+          CONFIG_PACKAGE_iw=y
           CONFIG_PACKAGE_tar=y
           CONFIG_PACKAGE_unzip=y
           CONFIG_PACKAGE_gzip=y
@@ -127,9 +130,9 @@ jobs:
           CONFIG_SIGNATURE_CHECK=n
           CONFIG_SIGNED_PACKAGES=n
           EOF
-          make defconfig
+          make KERNEL_PATCHVER=6.18 defconfig
           grep -q '^CONFIG_TARGET_allwinner_aiot_DEVICE_${{ matrix.device }}=y$' .config
-          for pkg in luci block-mount kmod-nvme wpad-openssl kmod-fs-ext4; do
+          for pkg in luci block-mount kmod-nvme wpad-openssl kmod-fs-ext4 tcpdump ethtool ip-full iw; do
             grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config || { echo "::error::package ${pkg} was not selected"; exit 1; }
           done
 
@@ -137,7 +140,7 @@ jobs:
         working-directory: ./openwrt-sunxi-aiot
         run: |
           set -o pipefail
-          if ! make -j"$(nproc)" V=s > build.log 2>&1; then
+          if ! make KERNEL_PATCHVER=6.18 -j"$(nproc)" V=s > build.log 2>&1; then
             echo "::error::OpenWrt build failed; last 300 log lines:"
             tail -300 build.log
             exit 1

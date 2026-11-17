@@ -5,10 +5,12 @@ set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENWRT_DIR="${PROJECT_ROOT}/openwrt-sunxi-aiot"
+KERNEL_PATCHVER="${KERNEL_PATCHVER:-6.6}"
 
 echo "=== Radxa A7Z OpenWrt Build Script ==="
 echo "Project root: ${PROJECT_ROOT}"
 echo "OpenWrt dir: ${OPENWRT_DIR}"
+echo "Kernel patch version: ${KERNEL_PATCHVER}"
 
 # Check if OpenWrt directory exists
 if [ ! -d "${OPENWRT_DIR}" ]; then
@@ -31,22 +33,21 @@ echo "Step 2: Installing feeds..."
 # Step 3: Configure
 echo ""
 echo "Step 3: Configuring build..."
-if [ -f "${PROJECT_ROOT}/.config.default" ]; then
-    cp "${PROJECT_ROOT}/.config.default" .config
-fi
-make defconfig
+cp "${PROJECT_ROOT}/.config.default" .config
+make KERNEL_PATCHVER="${KERNEL_PATCHVER}" defconfig
+grep -q '^CONFIG_TARGET_allwinner_aiot_DEVICE_radxa-cubie-a7z=y$' .config
 
 # Step 4: Build bootloader
 echo ""
 echo "Step 4: Building U-Boot bootloader..."
-make package/boot/uboot-allwinner/compile V=s
+make KERNEL_PATCHVER="${KERNEL_PATCHVER}" package/boot/uboot-allwinner/compile V=s
 
 # Step 5: Build firmware
 echo ""
 echo "Step 5: Building complete firmware..."
 NPROC=$(nproc)
 echo "Using ${NPROC} parallel jobs"
-make -j${NPROC} V=s
+make KERNEL_PATCHVER="${KERNEL_PATCHVER}" -j"${NPROC}" V=s
 
 # Check outputs
 echo ""

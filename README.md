@@ -5,8 +5,10 @@
 ## 项目概述
 
 - **目标设备**: Radxa Cubie-A7Z (Allwinner A733 SoC)
-- **OpenWrt 版本**: openwrt-24.10 (基于 openwrt-sunxi-aiot)
-- **内核版本**: Linux 6.6
+- **OpenWrt 版本**: openwrt-24.10（基于 openwrt-sunxi-aiot）
+- **默认内核版本**: Linux 6.6
+- **实验性内核版本**: Linux 6.18（单独 workflow，尚未完成补丁、构建和硬件验证）
+- **OpenWrt 25.12**: 已作为子模块保留，但当前没有 Allwinner AIoT/A7Z target，因此不属于 active build
 - **构建方式**: GitHub Actions 自动化构建
 
 ## 目录结构
@@ -26,25 +28,14 @@
 ### 本地构建
 
 ```bash
-cd openwrt-sunxi-aiot
+# 默认构建 OpenWrt 24.10 + Linux 6.6
+./build.sh
 
-# 更新 feeds
-./scripts/feeds update -a
-./scripts/feeds install -a
-
-# 配置构建
-make menuconfig
-# 选择: Target System → Allwinner AIoT
-# 选择: Target Profile → Radxa Cubie-A7Z
-
-# 编译启动包
-make package/boot/uboot-allwinner/compile V=s
-
-# 编译完整固件
-make -j$(nproc) V=s
+# 选择实验性 Linux 6.18（不修改子模块 Makefile）
+KERNEL_PATCHVER=6.18 ./build.sh
 ```
 
-编译输出在 `bin/targets/allwinner/aiot/` 目录下。
+脚本会更新并安装 feeds、生成 A7Z 配置、先编译 U-Boot，再编译完整固件。编译输出在 `openwrt-sunxi-aiot/bin/targets/allwinner/aiot/`。
 
 ### 支持的启动介质
 
@@ -58,38 +49,27 @@ make -j$(nproc) V=s
 
 ## 硬件支持
 
-### 已验证功能
+### 当前验证状态
 
-- ✅ 启动 (SD/eMMC/SPI NOR/UFS)
-- ✅ 网络接口
-- ✅ USB 接口
-- ✅ PCIe
-- ✅ SD 卡扩展
-- ✅ GPIO/LED
-- 🔲 待验证其他功能
+仓库中存在 A7Z 的 target、镜像定义、设备树和预置 U-Boot 文件，但当前没有可复核的串口日志、硬件测试记录或成功的 GitHub Actions 运行结论。因此以下功能均应视为**待验证**：启动介质、网络、USB、PCIe、SD、GPIO/LED。DTS 中的 `skip-uboot-pcie-training` 目前只有设备树写入，仓库内没有对应的 U-Boot consumer，不能据此宣称 PCIe workaround 已生效。
 
 ### 已知问题
 
-- 详见 [OPENWRT_RADXA_CUBIE_A7Z.md](./OPENWRT_RADXA_CUBIE_A7Z.md) 第 5-6 节
+- Linux 6.18 补丁只在单独 workflow 中选择，且补丁应用、完整构建和硬件启动仍待验证。
+- `target/linux/allwinner/config-6.18` 中的 `CONFIG_KMOD_CEDAR_VPU` 尚未在仓库中找到对应的 Kconfig/package 定义，不能据此证明 Cedar VPU 已启用。
+- `Temp/openwrt-25.12` 当前没有 `target/linux/allwinner`，OpenWrt 25.12 原生 A7Z 移植尚未开始。
+
 
 ## 构建流水线
 
 ### GitHub Actions
 
-此仓库已配置自动构建流水线:
+仓库包含两条构建流水线：
 
-- **触发方式**: 
-  - Push 到 `main` 或 `develop` 分支
-  - Pull Request 到 `main` 分支
-  - 手动触发 (workflow_dispatch)
+- `build-openwrt.yml`: OpenWrt 24.10 + Linux 6.6，A7Z profile。
+- `build-openwrt-6.18.yml`: OpenWrt 24.10 + Linux 6.18，A7Z/A7A matrix，选择 LuCI、SSH、网络诊断、USB/存储、NVMe/PCI、USB Ethernet、Wi-Fi 和常用命令行工具。
 
-- **产物**: 
-  - 固件镜像 (artifacts: `openwrt-firmware-a7z`)
-  - 构建日志 (失败时保留 7 天)
-
-- **环境**: Ubuntu latest + 所有必需的 OpenWrt 构建依赖
-
-查看构建历史: [Actions 标签](../../actions)
+两条 workflow 使用 `ubuntu-24.04`，支持 push、Pull Request（标准 workflow）和手动触发。产物与构建日志上传到 Actions artifacts。查看构建历史: [Actions 标签](../../actions)
 
 ## 设备刷写指南
 
