@@ -46,8 +46,11 @@ jobs:
       - name: Setup OpenWrt build environment
         working-directory: ./openwrt-sunxi-aiot
         run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          git config --global http.connectTimeout 30
+          git config --global http.lowSpeedLimit 1000
+          git config --global http.lowSpeedTime 120
+          timeout --signal=TERM 20m env GIT_TERMINAL_PROMPT=0 ./scripts/feeds update -a
+          timeout --signal=TERM 10m env GIT_TERMINAL_PROMPT=0 ./scripts/feeds install -a
 
       - name: Generate build configuration
         working-directory: ./openwrt-sunxi-aiot
