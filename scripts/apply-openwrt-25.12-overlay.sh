@@ -43,6 +43,9 @@ cp "${SUNXI_DIR}/config-6.12" "${SUNXI_DIR}/config-6.18"
 cat "${AIOT_DIR}/target/linux/allwinner/config-6.18" >> "${SUNXI_DIR}/config-6.18"
 cp "${SUNXI_DIR}/cortexa53/config-6.12" "${SUNXI_DIR}/cortexa53/config-6.18"
 cp -a "${AIOT_DIR}/target/linux/allwinner/patches-6.18/." "${SUNXI_DIR}/patches-6.18/"
+# The 25.12 overlay supplies its own A7Z-only DTB registration below;
+# do not also apply the 24.10 patch, which references the absent A7A DTS.
+rm -f -- "${SUNXI_DIR}/patches-6.18/0002-register-radxa-cubie-a7-device-trees.patch"
 cp "${AIOT_DIR}/target/linux/allwinner/patches-6.6/0001-add-sunxi-bsp-patch.patch" \
   "${SUNXI_DIR}/patches-6.18/0000-add-sunxi-bsp.patch"
 cp "${ROOT_DIR}/porting/openwrt-25.12/0002-register-a7z-dtb.patch" \
