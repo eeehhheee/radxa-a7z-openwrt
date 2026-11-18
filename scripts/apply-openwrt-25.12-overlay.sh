@@ -6,6 +6,8 @@ OPENWRT_DIR="${OPENWRT_DIR:-${ROOT_DIR}/Temp/openwrt-25.12}"
 AIOT_DIR="${AIOT_DIR:-${ROOT_DIR}/openwrt-sunxi-aiot}"
 
 for path in \
+  "${OPENWRT_DIR}/scripts/package-metadata.pl" \
+  "${OPENWRT_DIR}/package/kernel/linux/modules/netfilter.mk" \
   "${OPENWRT_DIR}/target/linux/sunxi/image/cortexa53.mk" \
   "${AIOT_DIR}/include/kernel-6.18" \
   "${AIOT_DIR}/target/linux/allwinner/patches-6.18" \
@@ -57,6 +59,14 @@ cp "${AIOT_DIR}/package/boot/uboot-allwinner/Makefile" \
   "${OPENWRT_DIR}/package/boot/uboot-allwinner/Makefile"
 cp -a "${AIOT_DIR}/package/boot/uboot-allwinner/files/radxa-cubie-a7z" \
   "${OPENWRT_DIR}/package/boot/uboot-allwinner/files/"
+
+git -C "${OPENWRT_DIR}" apply \
+  "${ROOT_DIR}/porting/openwrt-25.12/0003-avoid-recursive-virtual-deps.patch"
+git -C "${OPENWRT_DIR}" apply \
+  "${ROOT_DIR}/porting/openwrt-25.12/0004-nf-flow-depends-on-nft-core.patch"
+sh "${ROOT_DIR}/scripts/test-package-metadata-virtual-deps.sh" "${OPENWRT_DIR}"
+grep -Fq 'DEPENDS:=+kmod-nf-conntrack +kmod-nft-core' \
+  "${OPENWRT_DIR}/package/kernel/linux/modules/netfilter.mk"
 
 sed -i 's/^KERNEL_PATCHVER:=6\.12$/KERNEL_PATCHVER:=6.18/' "${SUNXI_DIR}/Makefile"
 sed -i 's/@TARGET_allwinner/@TARGET_sunxi @TARGET_sunxi_cortexa53/' \
