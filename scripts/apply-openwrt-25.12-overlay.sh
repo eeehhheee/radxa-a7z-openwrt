@@ -8,6 +8,7 @@ AIOT_DIR="${AIOT_DIR:-${ROOT_DIR}/openwrt-sunxi-aiot}"
 for path in \
   "${OPENWRT_DIR}/scripts/package-metadata.pl" \
   "${OPENWRT_DIR}/package/kernel/linux/modules/netfilter.mk" \
+  "${OPENWRT_DIR}/package/kernel/mac80211/patches/build/210-wireless_netns_local_backport.patch" \
   "${OPENWRT_DIR}/target/linux/sunxi/image/cortexa53.mk" \
   "${AIOT_DIR}/include/kernel-6.18" \
   "${AIOT_DIR}/target/linux/allwinner/patches-6.18" \
@@ -65,6 +66,8 @@ git -C "${OPENWRT_DIR}" apply --unidiff-zero \
   "${ROOT_DIR}/porting/openwrt-25.12/0003-avoid-recursive-virtual-deps.patch"
 git -C "${OPENWRT_DIR}" apply \
   "${ROOT_DIR}/porting/openwrt-25.12/0004-nf-flow-depends-on-nft-core.patch"
+install -m 0644 "${ROOT_DIR}/porting/openwrt-25.12/0005-mac80211-sockwq-6.18.patch" \
+  "${OPENWRT_DIR}/package/kernel/mac80211/patches/build/245-sockwq-native-6.18.patch"
 sh "${ROOT_DIR}/scripts/test-package-metadata-virtual-deps.sh" "${OPENWRT_DIR}"
 grep -Fq 'DEPENDS:=+kmod-nf-conntrack +kmod-nft-core' \
   "${OPENWRT_DIR}/package/kernel/linux/modules/netfilter.mk"

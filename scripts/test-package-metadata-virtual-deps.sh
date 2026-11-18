@@ -49,6 +49,30 @@ Category: Test
 Title: Other bar provider
 Description: alternate
 @@
+
+Package: baz-self
+Depends: baz
+Provides: baz
+Default-Variant: 1
+Category: Test
+Title: Default baz provider which depends on baz
+Description: default self provider
+@@
+
+Package: baz-other
+Depends:
+Provides: baz
+Category: Test
+Title: Other baz provider
+Description: alternate
+@@
+
+Package: qux-self
+Depends: qux-self
+Category: Test
+Title: Direct self dependency
+Description: direct recursion
+@@
 EOF
 
 "${OPENWRT_DIR}/scripts/package-metadata.pl" config "${TMP_DIR}/packageinfo" > "${TMP_DIR}/config.in"
@@ -63,6 +87,15 @@ grep -Fq 'select PACKAGE_foo-default if PACKAGE_foo-other<PACKAGE_foo-self' "${T
 grep -Fq 'select PACKAGE_bar-other' "${TMP_DIR}/config.in"
 if grep -Fq 'select PACKAGE_bar-self-default' "${TMP_DIR}/config.in"; then
   echo "package-metadata.pl selected a virtual package consumer as its own provider" >&2
+  exit 1
+fi
+grep -Fq 'depends on PACKAGE_baz-other' "${TMP_DIR}/config.in"
+if grep -Fq 'PACKAGE_baz-self<PACKAGE_baz-self' "${TMP_DIR}/config.in"; then
+  echo "package-metadata.pl emitted a recursive non-select dependency" >&2
+  exit 1
+fi
+if grep -Fq 'depends on PACKAGE_qux-self' "${TMP_DIR}/config.in"; then
+  echo "package-metadata.pl emitted a direct self-dependency" >&2
   exit 1
 fi
 printf '%s\n' 'package-metadata.pl virtual dependency test: ok'

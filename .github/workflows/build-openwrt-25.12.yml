@@ -128,3 +128,16 @@ jobs:
             Temp/openwrt-25.12/config.log
           retention-days: 30
           if-no-files-found: warn
+
+      - name: Upload package metadata diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-25.12-metadata-diagnostics
+          path: |
+            Temp/openwrt-25.12/tmp/.packageinfo
+            Temp/openwrt-25.12/tmp/.config-package.in
+            Temp/openwrt-25.12/scripts/package-metadata.pl
+          retention-days: 14
+          if-no-files-found: warn
+          include-hidden-files: true

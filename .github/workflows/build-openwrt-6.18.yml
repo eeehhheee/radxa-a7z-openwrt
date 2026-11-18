@@ -81,6 +81,8 @@ jobs:
           cp -a "$src" "${dst%/*}/"
           grep -q '^PKG_VERSION:=6\.18\.' openwrt-sunxi-aiot/package/kernel/mac80211/Makefile
           grep -q 'netns_immutable' openwrt-sunxi-aiot/package/kernel/mac80211/patches/build/210-wireless_netns_local_backport.patch
+          install -m 0644 porting/openwrt-25.12/0005-mac80211-sockwq-6.18.patch \
+            "$dst/patches/build/245-sockwq-native-6.18.patch"
 
       - name: Generate build configuration
         working-directory: ./openwrt-sunxi-aiot
