@@ -43,6 +43,18 @@ jobs:
             echo "::error::target/linux/generic/pending-6.18 is missing"
             exit 1
           }
+          test -f openwrt-sunxi-aiot/target/linux/allwinner/patches-6.18/0000-add-sunxi-bsp.patch || {
+            echo "::error::patches-6.18/0000-add-sunxi-bsp.patch is missing; it must be tracked so the BSP include path is added to DTC"
+            exit 1
+          }
+          test -d openwrt-sunxi-aiot/target/linux/allwinner/files/bsp/include/dt-bindings/power || {
+            echo "::error::bsp/include/dt-bindings/power is missing from the Allwinner BSP overlay"
+            exit 1
+          }
+          grep -q 'addprefix -I,\$(DTC_INCLUDE)' openwrt-sunxi-aiot/target/linux/allwinner/patches-6.18/0000-add-sunxi-bsp.patch || {
+            echo "::error::0000-add-sunxi-bsp.patch must convert dtc_cpp_flags to the addprefix -I form"
+            exit 1
+          }
 
       - name: Select kernel 6.18
         run: |
@@ -157,7 +169,7 @@ jobs:
           set -o pipefail
           if ! make KERNEL_PATCHVER=6.18 -j"$(nproc)" V=s > build.log 2>&1; then
             echo "::error::OpenWrt build failed; summarized compiler errors follow"
-            { grep -Ei 'error:|fatal error:|undefined reference|No rule to make target|patch failed|Applying .* failed|make(\[[0-9]+\])?: \*\*\*' build.log || true; } | tail -40 | while IFS= read -r line; do
+            { grep -Ei '^[[:space:]]*([./[:alnum:]_+/-]+:[0-9]+(:[0-9]+)?:[[:space:]]*)?(fatal error:|error:)|^[[:space:]]*(undefined reference|No rule to make target|patch failed|Applying .* failed|make(\[[0-9]+\])?: \*\*\*)|^ERROR:' build.log || true; } | tail -40 | while IFS= read -r line; do
               echo "::error::$line"
             done
             tail -300 build.log

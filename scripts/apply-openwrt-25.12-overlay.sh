@@ -12,6 +12,9 @@ for path in \
   "${OPENWRT_DIR}/target/linux/sunxi/image/cortexa53.mk" \
   "${AIOT_DIR}/include/kernel-6.18" \
   "${AIOT_DIR}/target/linux/allwinner/patches-6.18" \
+  "${AIOT_DIR}/target/linux/allwinner/patches-6.18/0000-add-sunxi-bsp.patch" \
+  "${AIOT_DIR}/target/linux/generic/backport-6.18" \
+  "${AIOT_DIR}/target/linux/generic/hack-6.18" \
   "${AIOT_DIR}/target/linux/allwinner/files/bsp/Kconfig" \
   "${AIOT_DIR}/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60iw2p1.dtsi" \
   "${AIOT_DIR}/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60iw2p1-cpu-vf.dtsi" \
@@ -39,6 +42,17 @@ cp "${AIOT_DIR}/include/kernel-6.18" "${OPENWRT_DIR}/include/kernel-6.18"
 cp "${AIOT_DIR}/include/kernel-6.18" "${OPENWRT_DIR}/target/linux/generic/kernel-6.18"
 cp "${AIOT_DIR}/target/linux/generic/config-6.18" "${OPENWRT_DIR}/target/linux/generic/config-6.18"
 cp -a "${AIOT_DIR}/target/linux/generic/pending-6.18" "${OPENWRT_DIR}/target/linux/generic/"
+# The 25.12 tree only ships 6.12 backports; the 6.18 kernel needs the AIoT
+# fork's backport/hack sets, otherwise patches such as 487-mtd-spinand-Etron
+# lose their context (436-v7.3-mtd-spinand-HeYangTek adds heyangtek.o first).
+cp -a "${AIOT_DIR}/target/linux/generic/backport-6.18" "${OPENWRT_DIR}/target/linux/generic/"
+cp -a "${AIOT_DIR}/target/linux/generic/hack-6.18" "${OPENWRT_DIR}/target/linux/generic/"
+for patchdir in backport-6.18 hack-6.18 pending-6.18; do
+  if [[ -z "$(ls -A "${OPENWRT_DIR}/target/linux/generic/${patchdir}")" ]]; then
+    printf 'Overlay patch directory %s is empty after copy\n' "${patchdir}" >&2
+    exit 1
+  fi
+done
 cp "${SUNXI_DIR}/config-6.12" "${SUNXI_DIR}/config-6.18"
 cat "${AIOT_DIR}/target/linux/allwinner/config-6.18" >> "${SUNXI_DIR}/config-6.18"
 cp "${SUNXI_DIR}/cortexa53/config-6.12" "${SUNXI_DIR}/cortexa53/config-6.18"
@@ -46,8 +60,6 @@ cp -a "${AIOT_DIR}/target/linux/allwinner/patches-6.18/." "${SUNXI_DIR}/patches-
 # The 25.12 overlay supplies its own A7Z-only DTB registration below;
 # do not also apply the 24.10 patch, which references the absent A7A DTS.
 rm -f -- "${SUNXI_DIR}/patches-6.18/0002-register-radxa-cubie-a7-device-trees.patch"
-cp "${AIOT_DIR}/target/linux/allwinner/patches-6.6/0001-add-sunxi-bsp-patch.patch" \
-  "${SUNXI_DIR}/patches-6.18/0000-add-sunxi-bsp.patch"
 cp "${ROOT_DIR}/porting/openwrt-25.12/0002-register-a7z-dtb.patch" \
   "${SUNXI_DIR}/patches-6.18/9999-register-a7z-dtb.patch"
 cp -a "${AIOT_DIR}/target/linux/allwinner/files/bsp" "${SUNXI_DIR}/files/"
