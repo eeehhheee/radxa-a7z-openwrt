@@ -13,6 +13,8 @@ for path in \
   "${AIOT_DIR}/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60iw2p1.dtsi" \
   "${AIOT_DIR}/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60iw2p1-cpu-vf.dtsi" \
   "${AIOT_DIR}/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60i-a733-cubie-a7z.dts" \
+  "${AIOT_DIR}/target/linux/allwinner/image/gen_sdcard_image.sh" \
+  "${AIOT_DIR}/target/linux/allwinner/image/extlinux/extlinux.conf" \
   "${AIOT_DIR}/package/boot/uboot-allwinner/files/radxa-cubie-a7z"; do
   if [[ ! -e "${path}" ]]; then
     printf 'Required overlay input is missing: %s\n' "${path}" >&2
@@ -50,6 +52,7 @@ cp "${AIOT_DIR}/target/linux/allwinner/files/arch/arm64/boot/dts/allwinner/sun60
   "${SUNXI_DIR}/files/arch/arm64/boot/dts/allwinner/"
 cp "${AIOT_DIR}/target/linux/allwinner/image/gen_sdcard_image.sh" \
   "${SUNXI_DIR}/image/gen_a7z_sdcard_image.sh"
+cp -a "${AIOT_DIR}/target/linux/allwinner/image/extlinux" "${SUNXI_DIR}/image/"
 cp "${AIOT_DIR}/package/boot/uboot-allwinner/Makefile" \
   "${OPENWRT_DIR}/package/boot/uboot-allwinner/Makefile"
 cp -a "${AIOT_DIR}/package/boot/uboot-allwinner/files/radxa-cubie-a7z" \
