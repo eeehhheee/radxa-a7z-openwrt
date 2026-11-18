@@ -59,10 +59,10 @@ cp -a "${AIOT_DIR}/package/boot/uboot-allwinner/files/radxa-cubie-a7z" \
   "${OPENWRT_DIR}/package/boot/uboot-allwinner/files/"
 
 sed -i 's/^KERNEL_PATCHVER:=6\.12$/KERNEL_PATCHVER:=6.18/' "${SUNXI_DIR}/Makefile"
-sed -i 's/@TARGET_allwinner/@TARGET_sunxi \&\& @TARGET_sunxi_cortexa53/' \
+sed -i 's/@TARGET_allwinner/@TARGET_sunxi @TARGET_sunxi_cortexa53/' \
   "${OPENWRT_DIR}/package/boot/uboot-allwinner/Makefile"
 grep -q '^KERNEL_PATCHVER:=6\.18$' "${SUNXI_DIR}/Makefile"
-grep -Fq 'DEPENDS:=@TARGET_sunxi && @TARGET_sunxi_cortexa53' \
+grep -Fq 'DEPENDS:=@TARGET_sunxi @TARGET_sunxi_cortexa53' \
   "${OPENWRT_DIR}/package/boot/uboot-allwinner/Makefile"
 
 git -C "${OPENWRT_DIR}" apply --unidiff-zero "${ROOT_DIR}/porting/openwrt-25.12/0001-add-a7z-image-build-step.patch"
