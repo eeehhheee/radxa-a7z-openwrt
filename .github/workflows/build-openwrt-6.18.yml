@@ -168,8 +168,16 @@ jobs:
       - name: Check build artifacts
         working-directory: ./openwrt-sunxi-aiot
         run: |
-          ls -lh bin/targets/allwinner/aiot/ || echo "No artifacts found"
-          file bin/targets/allwinner/aiot/* || echo "No files to check"
+          set -euo pipefail
+          image="$(find bin/targets/allwinner/aiot -maxdepth 1 -type f \
+            -name '*${{ matrix.device }}*sysupgrade.img.gz' -size +1M -print -quit)"
+          if [[ -z "$image" ]]; then
+            echo "::error::No non-empty sysupgrade image found for ${{ matrix.device }}"
+            ls -lh bin/targets/allwinner/aiot/ || true
+            exit 1
+          fi
+          file "$image"
+          ls -lh "$image"
 
       - name: Upload firmware artifacts
         if: always()
