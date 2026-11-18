@@ -85,7 +85,12 @@ jobs:
           CONFIG_SIGNATURE_CHECK=n
           CONFIG_SIGNED_PACKAGES=n
           EOF
-          make KERNEL_PATCHVER=6.18 defconfig
+          if ! make KERNEL_PATCHVER=6.18 defconfig > config.log 2>&1; then
+            echo "::error::OpenWrt 25.12 defconfig failed"
+            { grep -Ei 'error:|fatal error:|unknown symbol|undefined reference|No rule to make target|WARNING:' config.log || true; } | tail -80
+            tail -200 config.log
+            exit 1
+          fi
           grep -q '^CONFIG_TARGET_sunxi_cortexa53_DEVICE_radxa_cubie-a7z=y$' .config
           grep -q '^CONFIG_PACKAGE_uboot-allwinner-radxa-cubie-a7z=y$' .config
 
@@ -118,5 +123,6 @@ jobs:
           path: |
             Temp/openwrt-25.12/bin/targets/sunxi/cortexa53/
             Temp/openwrt-25.12/build.log
+            Temp/openwrt-25.12/config.log
           retention-days: 30
           if-no-files-found: warn
