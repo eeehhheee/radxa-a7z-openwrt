@@ -188,6 +188,19 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      - name: Upload kernel diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-diagnostics-6.18-${{ matrix.device }}
+          path: |
+            openwrt-sunxi-aiot/build_dir/target-*/linux-allwinner_aiot/linux-6.18.*/.config
+            openwrt-sunxi-aiot/build_dir/target-*/linux-allwinner_aiot/linux-6.18.*/modules.builtin
+            openwrt-sunxi-aiot/build_dir/target-*/linux-allwinner_aiot/linux-6.18.*/arch/arm64/boot/dts/allwinner/sun60i-a733-cubie-a7*.dtb
+          retention-days: 7
+          if-no-files-found: warn
+          include-hidden-files: true
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
