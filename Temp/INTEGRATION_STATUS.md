@@ -1,26 +1,26 @@
-# Linux 6.18 → Radxa A7Z 集成状态报告
+# A7Z OpenWrt Integration Status
 
-## 当前状态
+## Current state
 
-这是 OpenWrt 24.10 `openwrt-sunxi-aiot` 上的实验性 Linux 6.18 集成，不是 OpenWrt 25.12 原生 A7Z target。仓库已保留内核版本目录、Allwinner 配置和 8 个 6.18 补丁，但尚无可复核的补丁应用、完整构建或硬件启动证据。
+The repository has three separate build paths:
 
-## 已准备
+- OpenWrt 24.10 with Linux 6.6 is the established CI baseline; A7Z produced a successful artifact in run `44216787167`.
+- OpenWrt 24.10 with Linux 6.18 is experimental. A7A/A7Z configuration succeeds, but the previous firmware run failed while compiling mac80211 backports 6.12.44 against Linux 6.18 APIs (`netns_local`, timer and socket symbols). The workflow now substitutes OpenWrt 25.12's mac80211 6.18.55 package and compatibility patches; this change is not yet verified by CI. Separately, the earlier `kmod-nf-flow` missing `nf_tables.ko` package dependency has been fixed by adding `kmod-nft-core`.
+- OpenWrt 25.12 has no native A7Z target. A parent-repository overlay adds the A7Z profile, DTS/BSP integration, vendor boot image layout and U-Boot package to `sunxi/cortexa53`, and selects Linux 6.18. Its first CI attempts reached defconfig but failed on recursive virtual-package provider dependencies. The overlay now backports a self-provider filter with a regression test; additional config-key and kernel metadata path corrections are awaiting CI.
 
-1. `include/kernel-6.18` 与 `target/linux/generic/config-6.18` 已存在。
-2. `target/linux/generic/pending-6.18` 与 `target/linux/allwinner/config-6.18` 已存在。
-3. `target/linux/allwinner/patches-6.18/` 保留 8 个补丁；其中部分补丁依赖 `files/bsp` overlay，需以 CI 的实际补丁应用结果为准。
-4. `.github/workflows/build-openwrt-6.18.yml` 会对 A7Z/A7A 选择常用 LuCI、SSH、网络诊断、USB/存储、NVMe/PCI、USB Ethernet、Wi-Fi 和命令行工具，并上传构建日志和产物。
-5. `build.sh` 支持 `KERNEL_PATCHVER=6.18 ./build.sh`，通过 make 命令行变量选择内核，不修改 tracked Makefile。
+No 25.12 or Linux 6.18 image is considered successful until the workflow's firmware verification step passes and a non-placeholder artifact is present.
 
-## 未完成验证
+## Integrated pieces
 
-1. 6.18 补丁是否能在当前源码和 overlay 顺序下完整应用。
-2. OpenWrt 24.10 + Linux 6.18 + A7Z/A7A 的完整 CI 构建。
-3. A7Z 硬件启动、网络、USB、存储、PCIe、GPIO/LED 等功能。
-4. `config-6.18` 中的 `CONFIG_KMOD_CEDAR_VPU` 尚未找到对应 Kconfig/package 定义，不能视为已启用的 VPU 驱动。
-5. A7Z DTS 的 `skip-uboot-pcie-training` 在仓库内没有 U-Boot consumer，预置 U-Boot 是否支持该私有属性仍未知。
-6. OpenWrt 25.12 的 `sunxi` target 是旧的 ARM 目标，没有 A733/A7Z DTS 或 AIoT subtarget；OpenWrt 25.12 原生 A7Z 移植尚未开始。
+1. The active 24.10 source contains the A7Z profile, Allwinner BSP overlay, A7Z/SoC DTS files, vendor image helper, extlinux configuration and prebuilt U-Boot files.
+2. The 6.18 kernel config selects known Sun60IW2 BSP Kconfig symbols. It no longer contains the earlier invalid OpenWrt package selector `CONFIG_KMOD_CEDAR_VPU`; Cedar VPU availability is still unverified.
+3. `scripts/apply-openwrt-25.12-overlay.sh` prepares the pinned 25.12 source without modifying the upstream submodule commit and applies parent-repo patches for device image generation, the DTS registration, virtual dependency handling and the `nf-flow` module dependency.
+4. The independent workflows build OpenWrt 24.10/Linux 6.6, OpenWrt 24.10/Linux 6.18 (A7A/A7Z), and OpenWrt 25.12/Linux 6.18 (A7Z), with build logs and artifacts uploaded for diagnosis. The 6.18 workflow temporarily replaces the 24.10 mac80211 package with pinned 25.12 package source to use matching backports 6.18.55.
 
-## 下一步
+## Remaining verification
 
-先推送变更并观察两个 GitHub Actions workflow 的实际运行结果；失败时保留 build.log，按补丁应用、内核配置、工具链和镜像打包阶段分别定位。
+1. Complete the current Linux 6.18 A7A and A7Z builds and verify the firmware artifact check.
+2. Rerun 25.12 after the provider filter, correct device config symbol (`radxa_cubie_a7z`) and `target/linux/generic/kernel-6.18` metadata are included; verify defconfig and image packaging.
+3. Boot the resulting A7Z image on hardware and test storage, networking, USB, PCIe, GPIO and LED.
+4. The DTS property `skip-uboot-pcie-training` has no known active U-Boot consumer in this repository; the prebuilt U-Boot's behavior remains unknown.
+5. Do not treat the Cedar VPU config or driver as enabled/working without a matching Kconfig/package definition and runtime evidence.

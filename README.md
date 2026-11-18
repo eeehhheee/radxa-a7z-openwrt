@@ -7,8 +7,8 @@
 - **目标设备**: Radxa Cubie-A7Z (Allwinner A733 SoC)
 - **OpenWrt 版本**: openwrt-24.10（基于 openwrt-sunxi-aiot）
 - **默认内核版本**: Linux 6.6
-- **实验性内核版本**: Linux 6.18（单独 workflow；前次构建失败，现已修正 Kconfig fragment 并增加错误日志摘要，等待重跑验证）
-- **OpenWrt 25.12**: 新增父仓库 overlay 与独立 Actions workflow，复用 sunxi/cortexa53 子目标和 A7Z vendor boot layout；仍属实验性移植，尚无成功构建或硬件验证
+- **实验性内核版本**: Linux 6.18（A7A/A7Z 配置通过，但构建暴露出 24.10 的 `backports-6.12.44` 与 6.18 API 不兼容；workflow 已切换到 25.12 的 `backports-6.18.55`，修复待重跑验证）
+- **OpenWrt 25.12**: 父仓库 overlay 将 A7Z 接入 `sunxi/cortexa53` 并复用 vendor boot layout；首次 defconfig 暴露虚拟包 provider 自依赖，修正与回归测试已准备，后续 CI 验证中
 - **构建方式**: GitHub Actions 自动化构建
 
 ## 目录结构
@@ -55,9 +55,9 @@ KERNEL_PATCHVER=6.18 ./build.sh
 
 ### 已知问题
 
-- Linux 6.18 上一次 A7A/A7Z CI 均在 kernel/full build 阶段失败；已将 `config-6.18` 改为有效的 Sun60IW2 BSP Kconfig，并在新 workflow 中输出错误摘要，最终根因仍需下一次 run 确认。
-- OpenWrt 25.12 本身没有 A7Z target；新增 overlay 将 A7Z 接入现有 `sunxi/cortexa53` target，并复用 vendor BSP、设备树、镜像布局与 U-Boot 二进制。该 overlay 需要 Actions 首次验证。
-- 硬件启动、网络、USB、PCIe、SD、GPIO/LED 仍待实机验证。DTS 中的 `skip-uboot-pcie-training` 目前只有设备树写入，仓库内没有对应的 U-Boot consumer，不能据此宣称 PCIe workaround 已生效。
+- Linux 6.18 前次 A7A/A7Z CI 在 `mac80211` 编译阶段失败：24.10 的 `backports-6.12.44` 与 Linux 6.18 的 `netns_local`/timer/socket API 不兼容。6.18 workflow 已改用 25.12 的 `backports-6.18.55` 及其兼容补丁，尚待 Actions 验证；另已修复 `kmod-nf-flow` 对 `nf_tables.ko` 的包依赖。
+- OpenWrt 25.12 overlay 的首次 defconfig 因虚拟包默认 provider 自依赖失败；已调整 provider 过滤顺序并增加默认 provider 自依赖回归测试，同时修正设备配置符号和内核元数据路径，等待新 CI 验证。
+- 25.12 overlay 尚未有成功构建，硬件启动、网络、USB、PCIe、SD、GPIO/LED 均未实机验证。DTS 中的 `skip-uboot-pcie-training` 目前只有设备树写入，仓库内没有对应的 U-Boot consumer，不能据此宣称 PCIe workaround 已生效。
 
 
 ## 构建流水线

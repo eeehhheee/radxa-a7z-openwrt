@@ -1,20 +1,16 @@
 From 2112c1b294d9bfd669214301dca622112c2e9b7c Mon Sep 17 00:00:00 2001
 Subject: build: avoid recursive virtual package dependencies
 
-Backport the self-provider filter from OpenWrt PR #24638. Keep provider
-priority constraints for other packages while excluding the consumer.
+Filter the consumer from virtual providers before selecting the default. This
+prevents a package that is itself the preferred provider from selecting itself.
 
 ---
- scripts/package-metadata.pl | 1 +
+ scripts/package-metadata.pl | 2 ++
 
 diff --git a/scripts/package-metadata.pl b/scripts/package-metadata.pl
 --- a/scripts/package-metadata.pl
 +++ b/scripts/package-metadata.pl
-@@ -194,6 +194,7 @@ sub mconf_depends {
- 
- 				$depend = shift @vdeps;
- 
-+				@vdeps = grep { $_ ne $pkgname } @vdeps;
- 				if (@vdeps > 1) {
- 					$condition = ($condition ? "$condition && " : '') . join("&&", map { "PACKAGE_$_<PACKAGE_$pkgname" } @vdeps);
- 				} elsif (@vdeps > 0) {
+@@ -187,0 +188 @@ sub mconf_depends {
++					next if $v->{name} eq $pkgname;
+@@ -194,0 +196 @@ sub mconf_depends {
++				next unless @vdeps;

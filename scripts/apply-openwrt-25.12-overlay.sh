@@ -35,6 +35,7 @@ install -d \
   "${OPENWRT_DIR}/package/boot/uboot-allwinner/files"
 
 cp "${AIOT_DIR}/include/kernel-6.18" "${OPENWRT_DIR}/include/kernel-6.18"
+cp "${AIOT_DIR}/include/kernel-6.18" "${OPENWRT_DIR}/target/linux/generic/kernel-6.18"
 cp "${AIOT_DIR}/target/linux/generic/config-6.18" "${OPENWRT_DIR}/target/linux/generic/config-6.18"
 cp -a "${AIOT_DIR}/target/linux/generic/pending-6.18" "${OPENWRT_DIR}/target/linux/generic/"
 cp "${SUNXI_DIR}/config-6.12" "${SUNXI_DIR}/config-6.18"
@@ -60,7 +61,7 @@ cp "${AIOT_DIR}/package/boot/uboot-allwinner/Makefile" \
 cp -a "${AIOT_DIR}/package/boot/uboot-allwinner/files/radxa-cubie-a7z" \
   "${OPENWRT_DIR}/package/boot/uboot-allwinner/files/"
 
-git -C "${OPENWRT_DIR}" apply \
+git -C "${OPENWRT_DIR}" apply --unidiff-zero \
   "${ROOT_DIR}/porting/openwrt-25.12/0003-avoid-recursive-virtual-deps.patch"
 git -C "${OPENWRT_DIR}" apply \
   "${ROOT_DIR}/porting/openwrt-25.12/0004-nf-flow-depends-on-nft-core.patch"
