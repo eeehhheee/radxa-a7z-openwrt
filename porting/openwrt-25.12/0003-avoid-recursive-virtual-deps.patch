@@ -2,12 +2,11 @@ From 2112c1b294d9bfd669214301dca622112c2e9b7c Mon Sep 17 00:00:00 2001
 Subject: build: avoid recursive virtual package dependencies
 
 Filter the consumer from virtual providers before selecting defaults or
-emitting provider dependencies. Skip dependencies that have no remaining
-provider and drop direct package self-dependencies.
+emitting provider dependencies, and skip dependencies with no provider left.
 
 ---
- scripts/package-metadata.pl | 7 +++++--
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ scripts/package-metadata.pl | 4 +++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/scripts/package-metadata.pl b/scripts/package-metadata.pl
 --- a/scripts/package-metadata.pl
@@ -21,5 +20,3 @@ diff --git a/scripts/package-metadata.pl b/scripts/package-metadata.pl
 +				my @vdeps = grep { $_->{name} ne $pkgname } @$vdep;
 +				next unless @vdeps;
 +				$depend = join("||", map { "PACKAGE_".$_->{name} } @vdeps);
-@@ -221,0 +222 @@ sub mconf_depends {
-+		next if $depend eq "PACKAGE_$pkgname";

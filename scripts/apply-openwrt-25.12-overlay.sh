@@ -65,6 +65,8 @@ cp -a "${AIOT_DIR}/package/boot/uboot-allwinner/files/radxa-cubie-a7z" \
 git -C "${OPENWRT_DIR}" apply --unidiff-zero \
   "${ROOT_DIR}/porting/openwrt-25.12/0003-avoid-recursive-virtual-deps.patch"
 git -C "${OPENWRT_DIR}" apply \
+  "${ROOT_DIR}/porting/openwrt-25.12/0006-reemit-virtual-deps-without-self-rank.patch"
+git -C "${OPENWRT_DIR}" apply \
   "${ROOT_DIR}/porting/openwrt-25.12/0004-nf-flow-depends-on-nft-core.patch"
 install -m 0644 "${ROOT_DIR}/porting/openwrt-25.12/0005-mac80211-sockwq-6.18.patch" \
   "${OPENWRT_DIR}/package/kernel/mac80211/patches/build/245-sockwq-native-6.18.patch"

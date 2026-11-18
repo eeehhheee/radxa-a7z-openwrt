@@ -67,11 +67,28 @@ Title: Other baz provider
 Description: alternate
 @@
 
-Package: qux-self
-Depends: qux-self
+Package: lua-default
+Depends: @!riscv64
+Provides: lua-virtual
+Default-Variant: 1
 Category: Test
-Title: Direct self dependency
-Description: direct recursion
+Title: Restricted default Lua provider
+Description: default is unavailable on riscv64
+@@
+
+Package: lua-alt
+Depends:
+Provides: lua-virtual
+Category: Test
+Title: Alternative Lua provider
+Description: available on riscv64
+@@
+
+Package: dnsdist-test
+Depends: +lua-virtual
+Category: Test
+Title: Virtual Lua consumer
+Description: verify provider arbitration never reemits own rank
 @@
 EOF
 
@@ -94,8 +111,14 @@ if grep -Fq 'PACKAGE_baz-self<PACKAGE_baz-self' "${TMP_DIR}/config.in"; then
   echo "package-metadata.pl emitted a recursive non-select dependency" >&2
   exit 1
 fi
-if grep -Fq 'depends on PACKAGE_qux-self' "${TMP_DIR}/config.in"; then
-  echo "package-metadata.pl emitted a direct self-dependency" >&2
+# A selected provider's architecture gate must not inherit the rank of an
+# alternative provider (PACKAGE_lua-alt<PACKAGE_dnsdist-test), or the
+# consumer gains a recursive depends-on edge in Kconfig. The rank belongs
+# only on the select, while the propagated gate can negate the alternative.
+grep -Fq 'select PACKAGE_lua-default if PACKAGE_lua-alt<PACKAGE_dnsdist-test' "${TMP_DIR}/config.in"
+grep -Fq 'depends on !(!PACKAGE_lua-alt) || !riscv64' "${TMP_DIR}/config.in"
+if grep -E 'depends on .*<PACKAGE_dnsdist-test' "${TMP_DIR}/config.in"; then
+  echo "package-metadata.pl propagated consumer rank into dependency" >&2
   exit 1
 fi
 printf '%s\n' 'package-metadata.pl virtual dependency test: ok'
