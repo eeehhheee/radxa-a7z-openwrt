@@ -1,0 +1,18 @@
+diff --git a/target/linux/sunxi/image/Makefile b/target/linux/sunxi/image/Makefile
+--- a/target/linux/sunxi/image/Makefile
++++ b/target/linux/sunxi/image/Makefile
+@@ -12 +12 @@
+-DEVICE_VARS := SUNXI_DTS SUNXI_DTS_DIR
++DEVICE_VARS := SUNXI_DTS SUNXI_DTS_DIR DEVICE_DTS
+@@ -28,0 +29,11 @@
++
++define Build/a7z-sdcard
++	rm -f $@.boot
++	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
++	mcopy -i $@.boot $(DTS_DIR)/$(DEVICE_DTS).dtb ::sunxi.dtb
++	mcopy -i $@.boot $(IMAGE_KERNEL) ::kernel.img
++	mcopy -i $@.boot -s extlinux ::/
++	./gen_a7z_sdcard_image.sh $@ $@.boot $(IMAGE_ROOTFS) $(CONFIG_SUNXI_SD_BOOT_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(STAGING_DIR_IMAGE)/boot0_sdcard.bin $(STAGING_DIR_IMAGE)/boot_package.fex 36864
++	rm -f $@.boot
++endef
++

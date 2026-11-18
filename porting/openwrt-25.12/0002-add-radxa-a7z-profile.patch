@@ -1,0 +1,19 @@
+diff --git a/target/linux/sunxi/image/cortexa53.mk b/target/linux/sunxi/image/cortexa53.mk
+--- a/target/linux/sunxi/image/cortexa53.mk
++++ b/target/linux/sunxi/image/cortexa53.mk
+@@ -146,3 +146,15 @@ define Device/xunlong_orangepi-zero-plus
+   $(Device/sun50i-h5)
+ endef
+ TARGET_DEVICES += xunlong_orangepi-zero-plus
++
++define Device/radxa_cubie-a7z
++  KERNEL_NAME := Image
++  KERNEL := kernel-bin
++  DEVICE_VENDOR := Radxa
++  DEVICE_MODEL := Cubie A7Z
++  DEVICE_DTS := allwinner/sun60i-a733-cubie-a7z
++  DEVICE_PACKAGES := uboot-allwinner-radxa-cubie-a7z kmod-mac80211
++  IMAGES := sdcard.img.gz
++  IMAGE/sdcard.img.gz := a7z-sdcard | gzip
++endef
++TARGET_DEVICES += radxa_cubie-a7z

@@ -7,8 +7,8 @@
 - **目标设备**: Radxa Cubie-A7Z (Allwinner A733 SoC)
 - **OpenWrt 版本**: openwrt-24.10（基于 openwrt-sunxi-aiot）
 - **默认内核版本**: Linux 6.6
-- **实验性内核版本**: Linux 6.18（单独 workflow，尚未完成补丁、构建和硬件验证）
-- **OpenWrt 25.12**: 已作为子模块保留，但当前没有 Allwinner AIoT/A7Z target，因此不属于 active build
+- **实验性内核版本**: Linux 6.18（单独 workflow；前次构建失败，现已修正 Kconfig fragment 并增加错误日志摘要，等待重跑验证）
+- **OpenWrt 25.12**: 新增父仓库 overlay 与独立 Actions workflow，复用 sunxi/cortexa53 子目标和 A7Z vendor boot layout；仍属实验性移植，尚无成功构建或硬件验证
 - **构建方式**: GitHub Actions 自动化构建
 
 ## 目录结构
@@ -55,21 +55,22 @@ KERNEL_PATCHVER=6.18 ./build.sh
 
 ### 已知问题
 
-- Linux 6.18 补丁只在单独 workflow 中选择，且补丁应用、完整构建和硬件启动仍待验证。
-- `target/linux/allwinner/config-6.18` 中的 `CONFIG_KMOD_CEDAR_VPU` 尚未在仓库中找到对应的 Kconfig/package 定义，不能据此证明 Cedar VPU 已启用。
-- `Temp/openwrt-25.12` 当前没有 `target/linux/allwinner`，OpenWrt 25.12 原生 A7Z 移植尚未开始。
+- Linux 6.18 上一次 A7A/A7Z CI 均在 kernel/full build 阶段失败；已将 `config-6.18` 改为有效的 Sun60IW2 BSP Kconfig，并在新 workflow 中输出错误摘要，最终根因仍需下一次 run 确认。
+- OpenWrt 25.12 本身没有 A7Z target；新增 overlay 将 A7Z 接入现有 `sunxi/cortexa53` target，并复用 vendor BSP、设备树、镜像布局与 U-Boot 二进制。该 overlay 需要 Actions 首次验证。
+- 硬件启动、网络、USB、PCIe、SD、GPIO/LED 仍待实机验证。DTS 中的 `skip-uboot-pcie-training` 目前只有设备树写入，仓库内没有对应的 U-Boot consumer，不能据此宣称 PCIe workaround 已生效。
 
 
 ## 构建流水线
 
 ### GitHub Actions
 
-仓库包含两条构建流水线：
+仓库包含三条构建流水线：
 
 - `build-openwrt.yml`: OpenWrt 24.10 + Linux 6.6，A7Z profile。
 - `build-openwrt-6.18.yml`: OpenWrt 24.10 + Linux 6.18，A7Z/A7A matrix，选择 LuCI、SSH、网络诊断、USB/存储、NVMe/PCI、USB Ethernet、Wi-Fi 和常用命令行工具。
+- `build-openwrt-25.12.yml`: OpenWrt 25.12 `sunxi/cortexa53` + Linux 6.18 A7Z overlay，构建常用网络、管理和存储包。
 
-两条 workflow 使用 `ubuntu-24.04`，支持 push、Pull Request（标准 workflow）和手动触发。产物与构建日志上传到 Actions artifacts。查看构建历史: [Actions 标签](../../actions)
+三条 workflow 使用 `ubuntu-24.04`，支持 push、Pull Request（标准 workflow）和手动触发。产物与构建日志上传到 Actions artifacts。查看构建历史: [Actions 标签](../../actions)
 
 ## 设备刷写指南
 
@@ -172,5 +173,5 @@ A: 准备 SD 卡恢复镜像，按文档第 4 节指引进行恢复。
 
 ---
 
-**最后更新**: 2026-11-14
+**最后更新**: 2026-11-18
 **维护者**: kaiter

@@ -1,0 +1,122 @@
+name: Build OpenWrt 25.12 for Radxa A7Z
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-openwrt-25-a7z-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout pinned OpenWrt sources
+        run: git submodule update --init Temp/openwrt-25.12 openwrt-sunxi-aiot
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib gettext git libncurses-dev libssl-dev python3 python3-setuptools rsync unzip zlib1g-dev file wget device-tree-compiler dosfstools mtools
+
+      - name: Apply A7Z 25.12 overlay
+        run: ./scripts/apply-openwrt-25.12-overlay.sh
+
+      - name: Update and install feeds
+        working-directory: ./Temp/openwrt-25.12
+        run: |
+          git config --global http.connectTimeout 30
+          git config --global http.lowSpeedLimit 1000
+          git config --global http.lowSpeedTime 120
+          timeout --signal=TERM 20m env GIT_TERMINAL_PROMPT=0 ./scripts/feeds update -a
+          timeout --signal=TERM 10m env GIT_TERMINAL_PROMPT=0 ./scripts/feeds install -a
+
+      - name: Generate build configuration
+        working-directory: ./Temp/openwrt-25.12
+        run: |
+          cat > .config <<'EOF'
+          CONFIG_TARGET_sunxi=y
+          CONFIG_TARGET_sunxi_cortexa53=y
+          CONFIG_TARGET_sunxi_cortexa53_DEVICE_radxa_cubie-a7z=y
+          CONFIG_TARGET_BOARD="sunxi"
+          CONFIG_TARGET_SUBTARGET="cortexa53"
+          CONFIG_CPU_TYPE="cortex-a53"
+          CONFIG_SUNXI_SD_BOOT_PARTSIZE=20
+          CONFIG_TARGET_ROOTFS_PARTSIZE=512
+          CONFIG_PACKAGE_uboot-allwinner-radxa-cubie-a7z=y
+          CONFIG_PACKAGE_kmod-mac80211=y
+          CONFIG_PACKAGE_wpad-openssl=y
+          CONFIG_PACKAGE_luci=y
+          CONFIG_PACKAGE_luci-app-firewall=y
+          CONFIG_PACKAGE_openssh-server=y
+          CONFIG_PACKAGE_openssh-sftp-server=y
+          CONFIG_PACKAGE_openssh-client=y
+          CONFIG_PACKAGE_curl=y
+          CONFIG_PACKAGE_wget-ssl=y
+          CONFIG_PACKAGE_ca-bundle=y
+          CONFIG_PACKAGE_tcpdump=y
+          CONFIG_PACKAGE_ethtool=y
+          CONFIG_PACKAGE_ip-full=y
+          CONFIG_PACKAGE_iw=y
+          CONFIG_PACKAGE_kmod-usb-storage=y
+          CONFIG_PACKAGE_kmod-fs-ext4=y
+          CONFIG_PACKAGE_kmod-nvme=y
+          CONFIG_PACKAGE_nvme-cli=y
+          CONFIG_PACKAGE_pciutils=y
+          CONFIG_PACKAGE_usbutils=y
+          CONFIG_PACKAGE_block-mount=y
+          CONFIG_SIGNATURE_CHECK=n
+          CONFIG_SIGNED_PACKAGES=n
+          EOF
+          make KERNEL_PATCHVER=6.18 defconfig
+          grep -q '^CONFIG_TARGET_sunxi_cortexa53_DEVICE_radxa_cubie-a7z=y$' .config
+          grep -q '^CONFIG_PACKAGE_uboot-allwinner-radxa-cubie-a7z=y$' .config
+
+      - name: Build firmware
+        working-directory: ./Temp/openwrt-25.12
+        run: |
+          set -o pipefail
+          if ! make KERNEL_PATCHVER=6.18 -j"$(nproc)" V=s > build.log 2>&1; then
+            echo "::error::OpenWrt 25.12 A7Z build failed; summarized errors follow"
+            { grep -Ei 'error:|fatal error:|undefined reference|No rule to make target|patch failed|Applying .* failed|make(\[[0-9]+\])?: \*\*\*' build.log || true; } | tail -40 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+            tail -300 build.log
+            exit 1
+          fi
+          tail -5 build.log
+
+      - name: Verify firmware image
+        working-directory: ./Temp/openwrt-25.12
+        run: |
+          ls -lh bin/targets/sunxi/cortexa53/
+          compgen -G 'bin/targets/sunxi/cortexa53/*radxa_cubie-a7z*sdcard.img.gz' >/dev/null
+          file bin/targets/sunxi/cortexa53/*radxa_cubie-a7z*sdcard.img.gz
+
+      - name: Upload firmware and build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-25.12-radxa-cubie-a7z
+          path: |
+            Temp/openwrt-25.12/bin/targets/sunxi/cortexa53/
+            Temp/openwrt-25.12/build.log
+          retention-days: 30
+          if-no-files-found: warn

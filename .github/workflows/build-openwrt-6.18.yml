@@ -141,7 +141,10 @@ jobs:
         run: |
           set -o pipefail
           if ! make KERNEL_PATCHVER=6.18 -j"$(nproc)" V=s > build.log 2>&1; then
-            echo "::error::OpenWrt build failed; last 300 log lines:"
+            echo "::error::OpenWrt build failed; summarized compiler errors follow"
+            { grep -Ei 'error:|fatal error:|undefined reference|No rule to make target|patch failed|Applying .* failed|make(\[[0-9]+\])?: \*\*\*' build.log || true; } | tail -40 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
             tail -300 build.log
             exit 1
           fi
