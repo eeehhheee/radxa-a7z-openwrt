@@ -87,7 +87,9 @@ jobs:
           EOF
           if ! make KERNEL_PATCHVER=6.18 defconfig > config.log 2>&1; then
             echo "::error::OpenWrt 25.12 defconfig failed"
-            { grep -Ei 'error:|fatal error:|unknown symbol|undefined reference|No rule to make target|WARNING:' config.log || true; } | tail -80
+            { grep -Ei 'error:|fatal error:|unknown symbol|undefined reference|No rule to make target|WARNING:|make.*: \*\*\*|Error [0-9]+' config.log || true; } | tail -80 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
             tail -200 config.log
             exit 1
           fi
