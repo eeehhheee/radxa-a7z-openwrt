@@ -85,6 +85,8 @@ git -C "${OPENWRT_DIR}" apply \
   "${ROOT_DIR}/porting/openwrt-25.12/0004-nf-flow-depends-on-nft-core.patch"
 install -m 0644 "${ROOT_DIR}/porting/openwrt-25.12/0005-mac80211-sockwq-6.18.patch" \
   "${OPENWRT_DIR}/package/kernel/mac80211/patches/build/245-sockwq-native-6.18.patch"
+git -C "${OPENWRT_DIR}" apply \
+  "${ROOT_DIR}/porting/openwrt-25.12/0007-olddefconfig-before-headers-install.patch"
 sh "${ROOT_DIR}/scripts/test-package-metadata-virtual-deps.sh" "${OPENWRT_DIR}"
 grep -Fq 'DEPENDS:=+kmod-nf-conntrack +kmod-nft-core' \
   "${OPENWRT_DIR}/package/kernel/linux/modules/netfilter.mk"
