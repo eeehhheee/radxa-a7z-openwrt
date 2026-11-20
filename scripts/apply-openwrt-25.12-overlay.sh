@@ -91,6 +91,8 @@ git -C "${OPENWRT_DIR}" apply \
   "${ROOT_DIR}/porting/openwrt-25.12/0008-crypto-modules-for-6-18.patch"
 git -C "${OPENWRT_DIR}" apply \
   "${ROOT_DIR}/porting/openwrt-25.12/0009-lib-crc-paths-for-6-18.patch"
+git -C "${OPENWRT_DIR}" apply \
+  "${ROOT_DIR}/porting/openwrt-25.12/0010-dtb-cpp-bsp-include.patch"
 sh "${ROOT_DIR}/scripts/test-package-metadata-virtual-deps.sh" "${OPENWRT_DIR}"
 grep -Fq 'DEPENDS:=+kmod-nf-conntrack +kmod-nft-core' \
   "${OPENWRT_DIR}/package/kernel/linux/modules/netfilter.mk"
