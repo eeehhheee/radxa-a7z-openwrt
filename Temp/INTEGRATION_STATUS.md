@@ -26,6 +26,27 @@ The repository has three separate build paths:
      `5fe1e803` drops `irq_to_desc()` from `bsp/drivers/input/init-input.c` (and the debug print in
      `bsp/drivers/input/ctp/nvt36xxx/nt36xxx.c`) in favour of the exported `irq_get_irq_data()` plus
      `irqd_irq_disabled()`, which works on both sparse and non-sparse kernels.
+  9. **The 25.12 tree links the mainline MMC host against the symbols item 7 removed.**
+     Run `44632381089` got past the `ccu_*` duplicates and failed at `vmlinux.o` with
+     `drivers/mmc/host/sunxi-mmc.c:795/1406: undefined reference to sunxi_ccu_set_mmc_timing_mode`
+     and `:1409: undefined reference to sunxi_ccu_get_mmc_timing_mode`. Those two symbols live in
+     `drivers/clk/sunxi-ng/ccu_mmc_timing.c`, part of the `sunxi-ccu-y` aggregate, so
+     `# CONFIG_SUNXI_CCU is not set` removed them while the mainline MMC host still called them.
+     That driver was compiled because `target/linux/sunxi/config-6.12:313` sets
+     `CONFIG_MMC_SUNXI=y` and `patches-6.18/0001-allwinner-a733-orangepi-4-pro-6.18-mainline.patch`
+     relaxes its dependency to `depends on SUNXI_CCU || AW_CCU`, which `AW_CCU=y` satisfies.
+     Building it is pointless anyway: its `of_match` table does not list
+     `allwinner,sunxi-mmc-v4p6x`, the compatible `sun60iw2p1.dtsi:4338` uses, so it could never bind.
+     `config-6.18` now turns `CONFIG_MMC` and `CONFIG_MMC_BLOCK` on (the generic 6.18 fragment leaves
+     them off), disables `CONFIG_MMC_SUNXI`, and builds the BSP host instead: `CONFIG_AW_MMC=y` with
+     `AW_MMC_V4P00X/V4P1X/V4P5X/V5P3X=y` and `CONFIG_AW_MMC_HSQ=y` (needed because `AW_MMC` depends on
+     `MMC_HSQ || AW_MMC_HSQ` and the generic fragment disables `MMC_HSQ`), mirroring
+     `aiot/config-6.6:237-244` and `:844-847` (`openwrt-sunxi-aiot` `df9ef9cf`). The same commit fixes
+     `bsp/drivers/mmc/sunxi-mmc.c:2996`, which called `mmc_card_blockaddr()`; no kernel release ever
+     shipped that name, the helper is `mmc_card_is_blockaddr()`. Note that the green 6.18 image above
+     was built before this change and therefore carries no MMC host at all
+     (`CC drivers/mmc/...` never appears in its build log), so an SD/eMMC root mount is not
+     possible with it.
 
   The previous mac80211 6.12.44 failures are addressed by substituting OpenWrt 25.12's mac80211 6.18.55 package. The sunxi BSP shim no longer blocks the build: `patches-6.18/0000-add-sunxi-bsp.patch` was untracked, so CI never applied it and DTC could not find `dt-bindings/power/sun60iw2-power.h`; it is committed in `openwrt-sunxi-aiot` (`e2f599ea`) and rewrites `dtc_cpp_flags` to the `addprefix -I` form over `DTC_INCLUDE`, so the extra `bsp/include` directory is not passed to the compiler as a source file. Separately, the earlier `kmod-nf-flow` missing `nf_tables.ko` package dependency has been fixed by adding `kmod-nft-core`.
 - OpenWrt 25.12 has no native A7Z target. The overlay port builds but has not passed the image verification step yet. A parent-repository overlay adds the A7Z profile, DTS/BSP integration, vendor boot image layout and U-Boot package to `sunxi/cortexa53`, and selects Linux 6.18. Defconfig and feeds pass; the most recent failure (run `44280942808`) was `pending-6.18/487-mtd-spinand-Add-support-for-Etron-EM73D044VCx.patch` failing to patch `drivers/mtd/nand/spi/Makefile`. Cause: the 25.12 tree only ships `backport-6.12`/`hack-6.12`, and the overlay copied only `pending-6.18`, so `436-v7.3-mtd-spinand-add-support-for-HeYangTek-HYF1GQ4UDACAE.patch` never ran and the `heyangtek.o` line expected by 487 was absent. The overlay now also copies `backport-6.18` (238 patches) and `hack-6.18` (69 patches), asserts all three patch directories are non-empty, and no longer overwrites the tracked 6.18 BSP shim with the 6.6 version. Replaying 434 -> 436 -> 487 against pristine v6.18.60 sources applies with zero fuzz. Run `44363719888` confirmed 487 now applies and the build reaches the same kconfig stage as the 6.18 workflow; the 25.12 path therefore inherits the `optional`/`cpufreq-linux-6.18` fixes through the shared BSP tree. The 25.12 tree also lacked the `olddefconfig` step that `openwrt-sunxi-aiot` gained in `fd2b5631`, so `syncconfig` prompted for the `Kernel Type` choice (`bsp/platform/Kconfig:17`, member `AW_KERNEL_AOSP` marked `(NEW)`) and died on the closed stdin with `choice[1-2?]: make[8]: *** [scripts/kconfig/Makefile:85: syncconfig] Error 1`. `porting/openwrt-25.12/0007-olddefconfig-before-headers-install.patch` is now applied by the overlay and adds the same pre-`headers_install` `olddefconfig` call plus the `.config`-based vermagic.
@@ -44,8 +65,8 @@ The 6.18 workflow is green as of run `44622092813` (headSha `394789d`): both mat
 
 ## Remaining verification
 
-1. The Linux 6.18 A7A/A7Z workflow is green (run `44622092813`, `394789d`); re-run it after any BSP change so `syncconfig`, the DTBs, the kernel build, the vmlinux link, modpost and the A7A/A7Z image checks stay passing. The accumulated fixes are the BSP shim (`e2f599ea`), the kconfig compatibility work (`518b7815`, `ca77f337`), `# CONFIG_KERNEL_WERROR is not set`, the 6.18 API ports (`ab224582`, `7b1533b5`, `9c534aa0`, `1caca912`, `b696182d`, `2371ec28`, `928e74f7`, `d661213d`, `3e8c2fbe`), `# CONFIG_SUNXI_CCU is not set` (`d0156057`) and the exported `irq_get_irq_data()` port (`5fe1e803`).
-2. Rerun 25.12 with the `backport-6.18`/`hack-6.18` overlay copy, the 0007 `olddefconfig` patch, `# CONFIG_KERNEL_WERROR is not set` and the shared BSP API fixes from `ab224582`/`7b1533b5`/`9c534aa0`/`1caca912`/`b696182d` `# CONFIG_SUNXI_CCU is not set` (`d0156057`) and the exported `irq_get_irq_data()` port (`5fe1e803`); verify that 487 applies, that `syncconfig` stops prompting, that the kernel tree builds, links and passes modpost, and that the SD-card image passes the size plus `gzip -t` check.
+1. The Linux 6.18 A7A/A7Z workflow is green (run `44622092813`, `394789d`); re-run it after any BSP change so `syncconfig`, the DTBs, the kernel build, the vmlinux link, modpost and the A7A/A7Z image checks stay passing. The accumulated fixes are the BSP shim (`e2f599ea`), the kconfig compatibility work (`518b7815`, `ca77f337`), `# CONFIG_KERNEL_WERROR is not set`, the 6.18 API ports (`ab224582`, `7b1533b5`, `9c534aa0`, `1caca912`, `b696182d`, `2371ec28`, `928e74f7`, `d661213d`, `3e8c2fbe`), `# CONFIG_SUNXI_CCU is not set` (`d0156057`), the exported `irq_get_irq_data()` port (`5fe1e803`) and the BSP MMC host (`df9ef9cf`, which also turns `CONFIG_MMC`/`CONFIG_MMC_BLOCK` on so the image can mount its rootfs).
+2. Rerun 25.12 with the `backport-6.18`/`hack-6.18` overlay copy, the 0007 `olddefconfig` patch, `# CONFIG_KERNEL_WERROR is not set` and the shared BSP API fixes from `ab224582`/`7b1533b5`/`9c534aa0`/`1caca912`/`b696182d` `# CONFIG_SUNXI_CCU is not set` (`d0156057`), the exported `irq_get_irq_data()` port (`5fe1e803`) and `# CONFIG_MMC_SUNXI is not set` plus `CONFIG_AW_MMC=y` (`df9ef9cf`); verify that 487 applies, that `syncconfig` stops prompting, that the kernel tree builds, links and passes modpost, and that the SD-card image passes the size plus `gzip -t` check.
 3. Boot the resulting A7Z image on hardware and test storage, networking, USB, PCIe, GPIO and LED.
 4. The DTS property `skip-uboot-pcie-training` has no known active U-Boot consumer in this repository; the prebuilt U-Boot's behavior remains unknown.
 5. Do not treat the Cedar VPU config or driver as enabled/working without a matching Kconfig/package definition and runtime evidence.
